@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  ansible:
+    build:
+      context: .
+      args:
+        - ANSIBLE_VERSION=2.6.4
+    image: uzer/ansible:2.6.4
+

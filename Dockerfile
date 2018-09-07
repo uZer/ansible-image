@@ -1,11 +1,14 @@
 FROM alpine:latest
-LABEL Description="Ansible Base image" Vendor="TheVoid" Version="1.0"
-MAINTAINER Youenn Piolet <piolet.y@gmail.com>
+ARG ANSIBLE_VERSION=2.6.4
 
-# Install base packages and ansible
-ADD requirements.txt /opt/
-RUN ln -s /lib /lib64 \
-    && apk --upgrade add --no-cache \
+LABEL io.voidal.description="Ansible baseimage for ci usage" \
+      io.voidal.vendor="TheVoid" \
+      io.voidal.ansible_version="${ANSIBLE_VERSION}" \
+      io.voidal.maintainers="Youenn Piolet <piolet.y@gmail.com>"
+
+# Runtime + build requirements
+RUN ln -s /lib /lib64 && \
+    apk add --no-cache \
             sudo \
             git \
             python \
@@ -14,25 +17,18 @@ RUN ln -s /lib /lib64 \
             ca-certificates \
             sshpass \
             openssh-client \
-            rsync \
-    && apk --upgrade add --no-cache --virtual \
-            build-dependencies \
-            build-base \
-            python-dev \
-            openssl-dev \
-            libffi-dev \
-    && pip install --upgrade --no-cache-dir -r /opt/requirements.txt \
-    && apk del --no-cache \
-            build-dependencies \
+            rsync
+
+# Build requirements + install ansible
+RUN apk add --virtual .build-deps --no-cache \
             build-base \
             python-dev \
             openssl-dev \
             libffi-dev \
             linux-headers \
-    && \
-        rm -rf /var/cache/apk/* \
-        rm -rf /tmp/*
+            && \
+    pip install --upgrade --no-cache-dir ansible==${ANSIBLE_VERSION} && \
+    apk del .build-deps && \
+    rm -rf /var/cache/apk/* /tmp/*
 
-# Default command: display local setup
-CMD ["ansible", "-c", "local", "-m", "setup", "all"]
-
+CMD ["ansible", "--version"]
